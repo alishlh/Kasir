@@ -41,7 +41,7 @@ class ProductResource extends Resource implements HasShieldPermissions
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $navigationGroup = 'Menejemen Produk';
+    protected static ?string $navigationGroup = 'Manajemen Produk';
 
 
     public static function getNavigationBadge(): ?string
@@ -99,6 +99,13 @@ class ProductResource extends Resource implements HasShieldPermissions
                     ->numeric()
                     ->helperText('jika tidak diisi akan di generate otomatis')
                     ->maxLength(255),
+                Forms\Components\DatePicker::make('expiry_date')
+                    ->displayFormat('d/m/Y')
+                    ->label('Tanggal Kadaluarsa')
+                    ->native(false)
+                    ->minDate(now())
+                    ->required()
+                    ->placeHolder('Masukkan tanggal kadaluarsa produk'),
                 Forms\Components\Toggle::make('is_active')
                     ->label('Produk Aktif')
                     ->required(),
@@ -112,6 +119,20 @@ class ProductResource extends Resource implements HasShieldPermissions
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('expired_status')
+                    ->label('Status')
+                    ->getStateUsing(
+                        fn(Product $record) =>
+                        \Carbon\Carbon::parse($record->expiry_date)->isPast()
+                            ? 'Kadaluarsa'
+                            : ''
+                    )
+                    ->color(
+                        fn(Product $record) =>
+                        \Carbon\Carbon::parse($record->expiry_date)->isPast()
+                            ? 'danger'
+                            : null
+                    ),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Produk')
                     ->description(fn(Product $record): string => $record->category()->withTrashed()->value('name'))
@@ -141,6 +162,10 @@ class ProductResource extends Resource implements HasShieldPermissions
                     ->searchable(),
                 Tables\Columns\BooleanColumn::make('is_active')
                     ->label('Produk Aktif'),
+                Tables\Columns\TextColumn::make('expiry_date')
+                    ->label('Tanggal Kadaluarsa')
+                    ->date('d-m-Y')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -195,7 +220,7 @@ class ProductResource extends Resource implements HasShieldPermissions
                     ->icon('heroicon-o-printer')
                     ->action(fn() => self::generateBulkBarcode(Product::all()))
                     ->color('success'),
-            ]);;
+            ]);
     }
 
     public static function getRelations(): array

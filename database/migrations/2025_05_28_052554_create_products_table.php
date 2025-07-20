@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('barcode')->nullable();
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->date('expiry_date')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

@@ -38,21 +38,46 @@ class ListProducts extends ListRecords
     }
 
     public function getTabs(): array
-{
-    return [
-        'all' => Tab::make(),
-        'Stock Banyak' => Tab::make()
-        ->modifyQueryUsing(fn (Builder $query) => $query->where('stock', '>', 10))
-        ->badge(Product::query()->where('stock', '>=', 10)->count())
-        ->badgeColor('success'),
-        'Stock Sedikit' => Tab::make()
-            ->modifyQueryUsing(fn (Builder $query) => $query->where( 'stock', '<', 10 ,)->where('stock', '>', 0))
-            ->badge(Product::query()->where('stock', '<', 10)->where('stock', '>', 0)->count())
-            ->badgeColor('warning'),
-        'Stock Habis' => Tab::make()
-            ->modifyQueryUsing(fn (Builder $query) => $query->where('stock', '=', 0))
-            ->badge(Product::query()->where('stock', '<=', 0)->count())
-            ->badgeColor('danger'),
-    ];
-}
+    {
+        return [
+            'all' => Tab::make(),
+            'Stock Banyak' => Tab::make()
+                ->modifyQueryUsing(fn(Builder $query) => $query->where('stock', '>', 10))
+                ->badge(Product::query()->where('stock', '>=', 10)->count())
+                ->badgeColor('success'),
+            'Stock Sedikit' => Tab::make()
+                ->modifyQueryUsing(fn(Builder $query) => $query->where('stock', '<', 10,)->where('stock', '>', 0))
+                ->badge(Product::query()->where('stock', '<', 10)->where('stock', '>', 0)->count())
+                ->badgeColor('warning'),
+            'Stock Habis' => Tab::make()
+                ->modifyQueryUsing(fn(Builder $query) => $query->where('stock', '=', 0))
+                ->badge(Product::query()->where('stock', '<=', 0)->count())
+                ->badgeColor('danger'),
+            'Hampir Kadaluarsa' => Tab::make()
+                ->modifyQueryUsing(fn(Builder $query) => $query->whereDate('expiry_date', '<=', now()->addMonths(3)))
+                ->badge(Product::query()->whereDate('expiry_date', '<=', now()->addMonths(3))->count())
+                ->badgeColor('warning'),
+            'Kadaluarsa' => Tab::make()
+                ->modifyQueryUsing(fn(Builder $query) => $query->whereDate('expiry_date', '<', now()))
+                ->badge(Product::query()->whereDate('expiry_date', '<', now())->count())
+                ->badgeColor('danger'),
+        ];
+    }
+
+    public function mount(): void
+    {
+        parent::mount();
+
+        // Ambil semua produk yang kadaluarsa dalam 3 bulan
+        $nearExpiryCount = Product::query()
+            ->whereDate('expiry_date', '<=', now()->addMonths(3))
+            ->count();
+
+        if ($nearExpiryCount > 0) {
+            Notification::make()
+                ->title("Ada $nearExpiryCount produk yang hampir kadaluarsa!")
+                ->warning()
+                ->send();
+        }
+    }
 }

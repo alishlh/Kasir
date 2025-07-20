@@ -32,11 +32,11 @@ class InventoryResource extends Resource implements HasShieldPermissions
 
     protected static ?string $navigationIcon = 'heroicon-o-squares-plus';
 
-    protected static ?string $navigationLabel = 'Menejemen Inventori';
+    protected static ?string $navigationLabel = 'Manajemen Inventori';
 
     protected static ?int $navigationSort = 3;
 
-    protected static ?string $navigationGroup = 'Menejemen Produk';
+    protected static ?string $navigationGroup = 'Manajemen Produk';
 
     public static function getNavigationBadge(): ?string
     {
