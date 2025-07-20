@@ -37,7 +37,7 @@ class CategoryResource extends Resource implements HasShieldPermissions
 
     protected static ?string $navigationLabel = 'Kategori';
 
-    protected static ?string $navigationGroup = 'Menejemen Produk';
+    protected static ?string $navigationGroup = 'Manajemen Produk';
 
     protected static ?int $navigationSort = 1;
 
