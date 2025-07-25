@@ -36,7 +36,7 @@ class StatsOverview extends BaseWidget
                 'this_month' => [now()->startOfMonth(), now()->endOfMonth()],
                 // Filter untuk menampilkan data tahun ini
                 'this_year' => [now()->startOfYear(), now()->endOfYear()],
-                
+
                 default => [now()->startOfDay(), now()->endOfDay()],
             };
         }
@@ -44,28 +44,34 @@ class StatsOverview extends BaseWidget
         $dataPriceOrder = Transaction::whereBetween('created_at', [$startDate, $endDate])->get();
         $dataPriceExpense = CashFlow::where('type', 'expense')->whereBetween('created_at', [$startDate, $endDate])->get();
         $dataPriceInFLow = CashFlow::where('type', 'income')->whereBetween('created_at', [$startDate, $endDate])->get();
-        
+        $dataTotalProfit = TransactionItem::whereBetween('created_at', [$startDate, $endDate])->sum('total_profit');
+
+
         $omset = $dataPriceOrder->sum('total') ?? 0;
         $inFlow = $dataPriceInFLow->sum('amount') ?? 0;
         $outFlow = $dataPriceExpense->sum('amount') ?? 0;
-        
+
         return [
-            Stat::make('Penjualan', 'Rp ' . number_format($omset, 0, ",", "."))
-            ->description('Omset')
-            ->descriptionIcon('heroicon-m-arrow-trending-up', IconPosition::Before)
-            ->chart($dataPriceOrder->pluck('total')->toArray())
-            ->color('success'),
+            Stat::make('Total Penjualan', 'Rp ' . number_format($omset, 0, ",", "."))
+                ->description('Total Penjualan')
+                ->descriptionIcon('heroicon-m-arrow-trending-up', IconPosition::Before)
+                ->chart($dataPriceOrder->pluck('total')->toArray())
+                ->color('success'),
+            Stat::make('Total Profit', 'Rp ' . number_format($dataTotalProfit, 0, ",", "."))
+                ->description('Total Profit')
+                ->descriptionIcon('heroicon-m-banknotes', IconPosition::Before)
+                ->color('info'),
             Stat::make('Uang Masuk', 'Rp ' . number_format($inFlow, 0, ",", "."))
-            ->description('Cash Inflow')
-            ->descriptionIcon('heroicon-m-arrow-trending-up', IconPosition::Before)
-            ->chart($dataPriceInFLow->pluck('amount')->toArray())
-            ->color('success'),
+                ->description('Cash Inflow')
+                ->descriptionIcon('heroicon-m-arrow-trending-up', IconPosition::Before)
+                ->chart($dataPriceInFLow->pluck('amount')->toArray())
+                ->color('success'),
             Stat::make('Uang Keluar', 'Rp ' . number_format($outFlow, 0, ",", "."))
-            ->description('Cash Outflow')
-            ->descriptionIcon('heroicon-m-arrow-trending-down', IconPosition::Before)
-            ->chart($dataPriceExpense->pluck('amount')->toArray())
-            ->color('danger'),
-            
+                ->description('Cash Outflow')
+                ->descriptionIcon('heroicon-m-arrow-trending-down', IconPosition::Before)
+                ->chart($dataPriceExpense->pluck('amount')->toArray())
+                ->color('danger'),
+
         ];
     }
 }
