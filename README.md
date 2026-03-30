@@ -23,7 +23,7 @@ Perhatikan untuk menjalankan atau mensetup project ini.
 
    ```
    git clone https://github.com/alishlh/Kasir.git
-   cd kasir-apotek-azzahra
+   cd Kasir
    composer install
    ```
    untuk production
