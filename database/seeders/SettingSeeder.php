@@ -14,15 +14,14 @@ class SettingSeeder extends Seeder
      */
     public function run(): void
     {
-        // Masukkan satu baris data pengaturan default
         DB::table('settings')->insert([
             'id' => 1,
-            'logo' => null, // atau 'path/to/your/logo.png' jika ada
-            'name' => 'Toko Maju Jaya',
+            'logo' => "products/product-default.jpg",
+            'name' => 'Apotek Azzahra',
             'phone' => '081234567890',
             'address' => 'Jl. Pahlawan No. 123, Kota Sejahtera, 14045',
-            'print_via_bluetooth' => 1, // 0 = false, 1 = true
-            'name_printer_local' => null, // contoh: 'EPSON-TM-T82'
+            'print_via_bluetooth' => 1,
+            'name_printer_local' => null,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
         ]);

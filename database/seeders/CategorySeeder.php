@@ -13,31 +13,43 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        
+
         $now = Carbon::now();
 
         DB::table('categories')->insert([
             [
                 'id' => 1,
-                'name' => 'Makanan Ringan',
+                'name' => 'Obat Bebas (OTC) & Ringan',
                 'created_at' => $now,
                 'updated_at' => $now
             ],
             [
                 'id' => 2,
-                'name' => 'Minuman',
+                'name' => 'Obat Keras & Resep',
                 'created_at' => $now,
                 'updated_at' => $now
             ],
             [
                 'id' => 3,
-                'name' => 'Alat Tulis Kantor (ATK)',
+                'name' => 'Vitamin & Suplemen',
                 'created_at' => $now,
                 'updated_at' => $now
             ],
             [
                 'id' => 4,
-                'name' => 'Produk Kebersihan',
+                'name' => 'Alat Kesehatan',
+                'created_at' => $now,
+                'updated_at' => $now
+            ],
+            [
+                'id' => 5,
+                'name' => 'Ibu & Anak',
+                'created_at' => $now,
+                'updated_at' => $now
+            ],
+            [
+                'id' => 6,
+                'name' => 'Perawatan Tubuh (Personal Care)',
                 'created_at' => $now,
                 'updated_at' => $now
             ],

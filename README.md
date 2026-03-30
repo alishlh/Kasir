@@ -19,14 +19,35 @@ _Sisi eksternal_
 
 Perhatikan untuk menjalankan atau mensetup project ini.
 
-1. Buat database terlebih dahulu
-2. Konfigurasikan file .env dengan database yang telah dibuat
-3. Jalankan perintah `c` dan `php artisan db:seed` atau `php artisan migrate:fresh --seed` (untuk membuat data default pertama)
-4. Jalankan perintah `php artisan shield:generate --all` (untuk generate policy dari semua model)
-5. Jalankan perintah `php artisan shield:super-admin` (untuk menambahkan/assign role super_admin ke user tertentu)
-6. Jalankan perintah `php artisan storage:link` untuk membuat symlink
-7. Jalankan perintah `php artisan serve` untuk menjalankan projek
-8. Buka browser dan kunjungi link http://127.0.0.1:8000
-9. Login dengan email (admin@gmail.com) dan password (admin123)
+1. Clone Repository dan composer install
+
+   ```
+   git clone https://github.com/alishlh/Kasir.git
+   cd kasir-apotek-azzahra
+   composer install
+   ```
+   untuk production
+
+   ```
+   composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+   ```
+3. Konfigurasikan file .env sesuaikan hotname, username, dan password, generate key dan storage link
+
+   ```
+   cp .env.example .env
+   php artisan key:generate
+   php artisan storage:link
+   ```
+4. Jalankan perintah `php artisan migrate --seed` atau `php artisan db:seed` atau `php artisan migrate:fresh --seed` (untuk membuat data default pertama)
+   
+   ```
+   php artisan migrate --seed
+   ```
+5. 
+6. Jalankan perintah `php artisan shield:generate --all` (untuk generate policy dari semua model)
+7. Jalankan perintah `php artisan shield:super-admin` (untuk menambahkan/assign role super_admin ke user tertentu)
+9. Jalankan perintah `php artisan ser` untuk menjalankan projek
+10. Buka browser dan kunjungi link http://127.0.0.1:8000
+11. Login dengan email (admin@gmail.com) dan password (password)
 
 Aplikasi siap di gunakan....

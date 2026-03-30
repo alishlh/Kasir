@@ -24,8 +24,14 @@ class ProductFavorite extends BaseWidget
             ->query($productQuery)
             ->columns([
                 Tables\Columns\ImageColumn::make('image')
-                ->label('Gambar')
-                ->circular(),
+                    ->label('Gambar')->alignCenter()
+                    ->getStateUsing(function ($record) {
+                        if ($record->image) {
+                            return asset("storage/{$record->image}");
+                        }
+                        return asset('storage/products/product-default.jpg');
+                    })
+                    ->circular(),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Produk')
                     ->searchable(),

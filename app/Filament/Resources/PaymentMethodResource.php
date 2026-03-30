@@ -55,10 +55,10 @@ class PaymentMethodResource extends Resource implements HasShieldPermissions
                     ->label('Metode Pembayaran')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\FileUpload::make('image')
-                    ->label('Icon Pembayaran')
-                    ->image()
-                    ->required(),
+                // Forms\Components\FileUpload::make('image')
+                //     ->label('Icon Pembayaran')
+                //     ->image()
+                //     ->required(),
                 Forms\Components\Toggle::make('is_cash')
                     ->label('Metode Pembayaran Cash')
                     ->required(),
@@ -70,7 +70,14 @@ class PaymentMethodResource extends Resource implements HasShieldPermissions
         return $table
             ->columns([
                 Tables\Columns\ImageColumn::make('image')
-                    ->label('Logo Pembayaran'),
+                    ->circular()
+                    ->getStateUsing(function ($record) {
+                        if ($record->image) {
+                            return asset("storage/{$record->image}");
+                        }
+                        return asset('images/payment.png');
+                    })
+                    ->label('Gambar'),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Metode Pembayaran')
                     ->searchable(),

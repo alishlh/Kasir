@@ -17,71 +17,70 @@ class ReportObserver
      * Handle the Report "creating" event.
      */
     public function creating(Report $report): void
-    {       
-            $logo = Setting::first()->logo;
-            $today = now()->format('Ymd');
-            $countToday = Report::whereDate('created_at', today())
+    {
+        $logo = Setting::first()->logo;
+        $today = now()->format('Ymd');
+        $countToday = Report::whereDate('created_at', today())
             ->count() + 1;
 
-            // Buat nama file dan path
-            $fileName = 'LAPORAN-' . $today . '-' . str_pad($countToday, 2, '0', STR_PAD_LEFT);
-            $path = 'reports/' . $fileName;
+        // Buat nama file dan path
+        $fileName = 'LAPORAN-' . $today . '-' . str_pad($countToday, 2, '0', STR_PAD_LEFT);
+        $path = 'reports/' . $fileName;
 
-            if ($report->report_type == 'inflow') {
-                // Ambil data Inflow sesuai start_date dan end_date
-                $data = CashFlow::query()->where('type', 'income')
-                    ->when($report->start_date, fn ($q) => $q->whereDate('updated_at', '>=', $report->start_date))
-                    ->when($report->end_date, fn ($q) => $q->whereDate('updated_at', '<=', $report->end_date))
-                    ->get();
+        if ($report->report_type == 'inflow') {
+            // Ambil data Inflow sesuai start_date dan end_date
+            $data = CashFlow::query()->where('type', 'income')
+                ->when($report->start_date, fn($q) => $q->whereDate('updated_at', '>=', $report->start_date))
+                ->when($report->end_date, fn($q) => $q->whereDate('updated_at', '<=', $report->end_date))
+                ->get();
 
-                // Generate PDF
-                $pdf = Pdf::loadView('pdf.reports.pemasukan', [
-                    'fileName' => $fileName,
-                    'data' => $data,
-                    'logo' => $logo,
-                ])->setPaper('a4', 'portrait');
+            // Generate PDF
+            $pdf = Pdf::loadView('pdf.reports.pemasukan', [
+                'fileName' => $fileName,
+                'data' => $data,
+                'logo' => $logo,
+            ])->setPaper('a4', 'portrait');
+        } elseif ($report->report_type == 'outflow') {
+            // Ambil data Outflow sesuai start_date dan end_date
+            $data = CashFlow::query()->where('type', 'expense')
+                ->when($report->start_date, fn($q) => $q->whereDate('updated_at', '>=', $report->start_date))
+                ->when($report->end_date, fn($q) => $q->whereDate('updated_at', '<=', $report->end_date))
+                ->get();
 
-            } elseif($report->report_type == 'outflow') {
-                 // Ambil data Outflow sesuai start_date dan end_date
-                 $data = CashFlow::query()->where('type', 'expense')
-                 ->when($report->start_date, fn ($q) => $q->whereDate('updated_at', '>=', $report->start_date))
-                 ->when($report->end_date, fn ($q) => $q->whereDate('updated_at', '<=', $report->end_date))
-                 ->get();
+            // Generate PDF
+            $pdf = Pdf::loadView('pdf.reports.pengeluaran', [
+                'fileName' => $fileName,
+                'data' => $data,
+                'logo' => $logo,
+            ])->setPaper('a4', 'portrait');
+        } else {
+            // Ambil data Outflow sesuai start_date dan end_date
+            $data = Transaction::query()
+                ->when($report->start_date, fn($q) => $q->whereDate('updated_at', '>=', $report->start_date))
+                ->when($report->end_date, fn($q) => $q->whereDate('updated_at', '<=', $report->end_date))
+                ->get();
 
-                 // Generate PDF
-                $pdf = Pdf::loadView('pdf.reports.pengeluaran', [
-                    'fileName' => $fileName,
-                    'data' => $data,
-                    'logo' => $logo,
-                ])->setPaper('a4', 'portrait');
-            } else {
-                // Ambil data Outflow sesuai start_date dan end_date
-                 $data = Transaction::query()
-                 ->when($report->start_date, fn ($q) => $q->whereDate('updated_at', '>=', $report->start_date))
-                 ->when($report->end_date, fn ($q) => $q->whereDate('updated_at', '<=', $report->end_date))
-                 ->get();
+            // Generate PDF
+            $pdf = Pdf::loadView('pdf.reports.penjualan', [
+                'fileName' => $fileName,
+                'data' => $data,
+                'logo' => $logo,
+            ])->setPaper('a4', 'portrait');
+        }
 
-                 // Generate PDF
-                $pdf = Pdf::loadView('pdf.reports.penjualan', [
-                    'fileName' => $fileName,
-                    'data' => $data,
-                    'logo' => $logo,
-                ])->setPaper('a4', 'portrait');
-            }
+        // Pastikan folder 'storage/app/public/reports' ada
+        $pathDirectory = storage_path('app/public/reports');
+        if (!file_exists($pathDirectory)) {
+            mkdir($pathDirectory, 0755, true);
+        }
 
-            // Pastikan folder 'storage/app/public/reports' ada
-            $pathDirectory = storage_path('app/public/reports');
-            if (!file_exists($pathDirectory)) {
-                mkdir($pathDirectory, 0755, true);
-            }
+        // Simpan PDF ke storage
+        $fullPath = storage_path('app/public/' . $path);
+        $pdf->save($fullPath);
 
-            // Simpan PDF ke storage
-            $fullPath = storage_path('app/public/' . $path);
-            $pdf->save($fullPath);
-
-            // Set nama dan path_file ke model
-            $report->name = $fileName;
-            $report->path_file = $path;
+        // Set nama dan path_file ke model
+        $report->name = $fileName;
+        $report->path_file = $path;
     }
 
     /**
@@ -89,62 +88,60 @@ class ReportObserver
      */
     public function updated(Report $report): void
     {
-            $logo = Setting::first()->logo;
-            // Buat nama file dan path
-            $path = 'reports/' . $report->name;
+        $logo = Setting::first()->logo;
+        // Buat nama file dan path
+        $path = 'reports/' . $report->name;
 
-            if ($report->report_type == 'inflow') {
-                // Ambil data Inflow sesuai start_date dan end_date
-                $data = CashFlow::query()->where('type', 'income')
-                    ->when($report->start_date, fn ($q) => $q->whereDate('updated_at', '>=', $report->start_date))
-                    ->when($report->end_date, fn ($q) => $q->whereDate('updated_at', '<=', $report->end_date))
-                    ->get();
+        if ($report->report_type == 'inflow') {
+            // Ambil data Inflow sesuai start_date dan end_date
+            $data = CashFlow::query()->where('type', 'income')
+                ->when($report->start_date, fn($q) => $q->whereDate('updated_at', '>=', $report->start_date))
+                ->when($report->end_date, fn($q) => $q->whereDate('updated_at', '<=', $report->end_date))
+                ->get();
 
-                // Generate PDF
-                $pdf = Pdf::loadView('pdf.reports.pemasukan', [
-                    'fileName' => $report->name,
-                    'data' => $data,
-                    'logo' => $logo,
-                ])->setPaper('a4', 'portrait');
+            // Generate PDF
+            $pdf = Pdf::loadView('pdf.reports.pemasukan', [
+                'fileName' => $report->name,
+                'data' => $data,
+                'logo' => $logo,
+            ])->setPaper('a4', 'portrait');
+        } elseif ($report->report_type == 'outflow') {
+            // Ambil data Outflow sesuai start_date dan end_date
+            $data = CashFlow::query()->where('type', 'expense')
+                ->when($report->start_date, fn($q) => $q->whereDate('updated_at', '>=', $report->start_date))
+                ->when($report->end_date, fn($q) => $q->whereDate('updated_at', '<=', $report->end_date))
+                ->get();
 
-            } elseif($report->report_type == 'outflow') {
-                 // Ambil data Outflow sesuai start_date dan end_date
-                 $data = CashFlow::query()->where('type', 'expense')
-                 ->when($report->start_date, fn ($q) => $q->whereDate('updated_at', '>=', $report->start_date))
-                 ->when($report->end_date, fn ($q) => $q->whereDate('updated_at', '<=', $report->end_date))
-                 ->get();
+            // Generate PDF
+            $pdf = Pdf::loadView('pdf.reports.pengeluaran', [
+                'fileName' => $report->name,
+                'data' => $data,
+                'logo' => $logo,
+            ])->setPaper('a4', 'portrait');
+        } else {
+            // Ambil data Outflow sesuai start_date dan end_date
+            $data = Transaction::query()
+                ->when($report->start_date, fn($q) => $q->whereDate('updated_at', '>=', $report->start_date))
+                ->when($report->end_date, fn($q) => $q->whereDate('updated_at', '<=', $report->end_date))
+                ->get();
 
-                 // Generate PDF
-                $pdf = Pdf::loadView('pdf.reports.pengeluaran', [
-                    'fileName' => $report->name,
-                    'data' => $data,
-                    'logo' => $logo,
-                ])->setPaper('a4', 'portrait');
-            } else {
-                // Ambil data Outflow sesuai start_date dan end_date
-                 $data = Transaction::query()
-                 ->when($report->start_date, fn ($q) => $q->whereDate('updated_at', '>=', $report->start_date))
-                 ->when($report->end_date, fn ($q) => $q->whereDate('updated_at', '<=', $report->end_date))
-                 ->get();
+            // Generate PDF
+            $pdf = Pdf::loadView('pdf.reports.penjualan', [
+                'fileName' => $report->name,
+                'data' => $data,
+                'logo' => $logo,
+            ])->setPaper('a4', 'portrait');
+        }
 
-                 // Generate PDF
-                $pdf = Pdf::loadView('pdf.reports.penjualan', [
-                    'fileName' => $report->name,
-                    'data' => $data,
-                    'logo' => $logo,
-                ])->setPaper('a4', 'portrait');
-            }
+        // Pastikan folder 'storage/app/public/reports' ada
+        $pathDirectory = storage_path('app/public/reports');
+        if (!file_exists($pathDirectory)) {
+            mkdir($pathDirectory, 0755, true);
+        }
 
-            // Pastikan folder 'storage/app/public/reports' ada
-            $pathDirectory = storage_path('app/public/reports');
-            if (!file_exists($pathDirectory)) {
-                mkdir($pathDirectory, 0755, true);
-            }
-
-            // Simpan PDF ke storage
-            $fullPath = storage_path('app/public/' . $path);
-            $pdf->save($fullPath);
-
+        // Simpan PDF ke storage
+        $fullPath = storage_path('app/public/' . $path);
+        $pdf->save($fullPath);
     }
 
     /**
@@ -159,5 +156,4 @@ class ReportObserver
             Storage::delete($pdfPath);
         }
     }
-   
 }

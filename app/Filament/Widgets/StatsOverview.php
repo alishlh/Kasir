@@ -12,7 +12,6 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 
-
 class StatsOverview extends BaseWidget
 {
     use InteractsWithPageFilters;
@@ -44,8 +43,16 @@ class StatsOverview extends BaseWidget
         $dataPriceOrder = Transaction::whereBetween('created_at', [$startDate, $endDate])->get();
         $dataPriceExpense = CashFlow::where('type', 'expense')->whereBetween('created_at', [$startDate, $endDate])->get();
         $dataPriceInFLow = CashFlow::where('type', 'income')->whereBetween('created_at', [$startDate, $endDate])->get();
+
+        // Hitung total profit dari TransactionItem
         $dataTotalProfit = TransactionItem::whereBetween('created_at', [$startDate, $endDate])->sum('total_profit');
 
+        // Hitung total jasa dokter dan jasa tindakan dari Transaction
+        $totalJasaDokter = Transaction::whereBetween('created_at', [$startDate, $endDate])->sum('jasa_dokter');
+        $totalJasaTindakan = Transaction::whereBetween('created_at', [$startDate, $endDate])->sum('jasa_tindakan');
+
+        // Total profit keseluruhan (profit produk + jasa dokter + jasa tindakan)
+        $totalProfitAll = $dataTotalProfit + $totalJasaDokter + $totalJasaTindakan;
 
         $omset = $dataPriceOrder->sum('total') ?? 0;
         $inFlow = $dataPriceInFLow->sum('amount') ?? 0;
@@ -57,8 +64,8 @@ class StatsOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-arrow-trending-up', IconPosition::Before)
                 ->chart($dataPriceOrder->pluck('total')->toArray())
                 ->color('success'),
-            Stat::make('Total Profit', 'Rp ' . number_format($dataTotalProfit, 0, ",", "."))
-                ->description('Total Profit')
+            Stat::make('Total Profit', 'Rp ' . number_format($totalProfitAll, 0, ",", "."))
+                ->description('Total Profit (Produk + Jasa)')
                 ->descriptionIcon('heroicon-m-banknotes', IconPosition::Before)
                 ->color('info'),
             Stat::make('Uang Masuk', 'Rp ' . number_format($inFlow, 0, ",", "."))
@@ -71,7 +78,6 @@ class StatsOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-arrow-trending-down', IconPosition::Before)
                 ->chart($dataPriceExpense->pluck('amount')->toArray())
                 ->color('danger'),
-
         ];
     }
 }
