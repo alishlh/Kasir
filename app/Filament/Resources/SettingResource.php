@@ -40,45 +40,45 @@ class SettingResource extends Resource implements HasShieldPermissions
         return $form
             ->schema([
                 Forms\Components\Section::make('Profil Toko')
-                ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255)
-                    ->label('Nama Toko'),
-                Forms\Components\TextInput::make('address')
-                    ->required()
-                    ->maxLength(255)
-                    ->label('Alamat Toko'),
-                Forms\Components\TextInput::make('phone')
-                    ->tel()
-                    ->required()
-                    ->maxLength(255)
-                    ->label('Nomor Telepon'),
-                ]),
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255)
+                            ->label('Nama Toko'),
+                        Forms\Components\TextInput::make('address')
+                            ->required()
+                            ->maxLength(255)
+                            ->label('Alamat Toko'),
+                        Forms\Components\TextInput::make('phone')
+                            ->tel()
+                            ->required()
+                            ->maxLength(255)
+                            ->label('Nomor Telepon'),
+                    ]),
                 Forms\Components\Section::make('Setting Printer')
-                ->schema([
-                Forms\Components\ToggleButtons::make('print_via_bluetooth')
-                    ->required()
-                    ->label('Tipe Print')
-                    ->options([
-                        0 => 'Kabel (Server Local)',
-                        1 => 'Bluetooth'
-                    ])
-                    ->grouped()
-                    ->helperText('Pastikan setiap masuk halaman kasir sambungkan bluetooth terlebih dahulu')
-                    ->live(),
-                Forms\Components\TextInput::make('name_printer_local')
-                    ->maxLength(255)
-                    ->label('Nama Printer (Khusus untuk kabel)')
-                    ->helperText('Samakan dengan nama printer yang anda gunakan dan sudah terdaftar atau terhubung di server yang sama. Contoh: Epson T20')
-                    ->hidden(fn (Get $get) => $get('print_via_bluetooth') == true), // Disembunyikan jika print_via_mobile bernilai true
-                Forms\Components\FileUpload::make('logo')
-                    ->image()
-                    ->required()
-                    ->helperText('Pastikan format gambar adalah PNG')
-                    ->directory('images')
-                    ->label('Logo Toko'),
-                ]),
+                    ->schema([
+                        Forms\Components\ToggleButtons::make('print_via_bluetooth')
+                            ->required()
+                            ->label('Tipe Print')
+                            ->options([
+                                0 => 'Kabel (Server Local)',
+                                1 => 'Bluetooth'
+                            ])
+                            ->grouped()
+                            ->helperText('Pastikan setiap masuk halaman kasir sambungkan bluetooth terlebih dahulu')
+                            ->live(),
+                        Forms\Components\TextInput::make('name_printer_local')
+                            ->maxLength(255)
+                            ->label('Nama Printer (Khusus untuk kabel)')
+                            ->helperText('Samakan dengan nama printer yang anda gunakan dan sudah terdaftar atau terhubung di server yang sama. Contoh: Epson T20')
+                            ->hidden(fn(Get $get) => $get('print_via_bluetooth') == true), // Disembunyikan jika print_via_mobile bernilai true
+                        Forms\Components\FileUpload::make('logo')
+                            ->image()
+                            ->required()
+                            ->helperText('Pastikan format gambar adalah PNG')
+                            ->directory('images')
+                            ->label('Logo Toko'),
+                    ]),
             ]);
     }
 
@@ -88,16 +88,19 @@ class SettingResource extends Resource implements HasShieldPermissions
             ->columns([
                 Tables\Columns\ImageColumn::make('logo')
                     ->circular()
+                    ->getStateUsing(function ($record) {
+                        if ($record->logo) {
+                            return asset("storage/{$record->logo}");
+                        }
+                        return asset('storage/products/product-default.jpg');
+                    })
                     ->label('Logo Toko'),
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Nama Toko')
-                    ->searchable(),
+                    ->label('Nama Toko'),
                 Tables\Columns\TextColumn::make('address')
-                    ->label('Alamat Toko')
-                    ->searchable(),
+                    ->label('Alamat Toko'),
                 Tables\Columns\TextColumn::make('phone')
-                    ->label('Nomor Telepon')
-                    ->searchable(),
+                    ->label('Nomor Telepon'),
                 Tables\Columns\IconColumn::make('print_via_bluetooth')
                     ->label('Print Via Bluetooth')
                     ->boolean(),
@@ -117,9 +120,9 @@ class SettingResource extends Resource implements HasShieldPermissions
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                // Tables\Actions\BulkActionGroup::make([
+                //     Tables\Actions\DeleteBulkAction::make(),
+                // ]),
             ]);
     }
 

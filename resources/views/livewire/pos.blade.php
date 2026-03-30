@@ -26,16 +26,38 @@
             </div>
         </div>
 
+        <div class="mt-2 px-2.5 flex flex-wrap gap-2">
+            @php
+                $priceTypes = [
+                    'price' => 'Umum',
+                    'price_2' => 'Grosir',
+                    'price_racikan' => 'Racikan',
+                ];
+            @endphp
+
+            @foreach ($priceTypes as $colName => $label)
+                <button wire:click="$set('selectedPriceType', '{{ $colName }}')"
+                    class="px-4 py-2 rounded-full border-2 text-xs font-semibold transition-all
+            {{ $selectedPriceType === $colName
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-600 border-gray-200' }}">
+                    {{ $label }}
+                </button>
+            @endforeach
+        </div>
+
         <div class="mt-5 px-2.5 overflow-x-auto hide-scrollbar">
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 @foreach ($products as $item)
                     <div wire:click="addToOrder({{ $item->id }})"
-                        class="bg-white dark:bg-gray-700 p-2 rounded-lg border dark:border-none shadow cursor-pointer">
-                        <img src="{{ asset('storage/' . $item->image) }}" alt="Product Image"
-                            class="w-full h-24 object-cover shadow  border rounded-lg mb-2">
-                        <h3 class="text-sm font-semibold">{{ $item->name }}</h3>
-                        <p class="text-gray-600 dark:text-gray-400 text-sm">Rp.
-                            {{ number_format($item->price, 0, ',', '.') }}</p>
+                        class="bg-white dark:bg-gray-700 p-2 rounded-lg border dark:border-none shadow cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all">
+                        <img src="{{ asset('storage/' . ($item->image ?? 'products/product-default.jpg')) }}"
+                            loading="lazy" alt="Product Image"
+                            class="w-full h-24 object-cover shadow border rounded-lg mb-2">
+                        <h3 class="text-sm font-semibold line-clamp-2 h-10">{{ $item->name }}</h3>
+                        <p class="text-primary-600 dark:text-primary-400 font-bold text-sm mt-1">
+                            Rp {{ number_format($item->{$selectedPriceType} ?? $item->price, 0, ',', '.') }}
+                        </p>
                     </div>
                 @endforeach
             </div>
@@ -58,15 +80,15 @@
             @if (count($order_items) >= 5)
                 <div style="height: 400px; overflow-y: auto;" class="mb-4">
                 @else
-                <div class="mb-4">
+                    <div class="mb-4">
             @endif
 
             @foreach ($order_items as $item)
                 <div class="mb-4 ">
                     <div class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow">
                         <div class="flex items-center">
-                            <img src="{{ asset('storage/' . $item['image_url']) }}" alt="Product Image"
-                                class="w-10 h-10 object-cover rounded-lg mr-2">
+                            <img src="{{ asset('storage/' . ($item->image ?? 'products/product-default.jpg')) }}" loading="lazy"
+                                alt="Product Image" class="w-10 h-10 object-cover rounded-lg mr-2">
                             <div class="px-2">
                                 <h3 class="text-xs line-clamp-2 font-semibold">{{ $item['name'] }}</h3>
                                 <p class="text-gray-600 dark:text-gray-400 text-xs">Rp
@@ -85,82 +107,80 @@
                     </div>
                 </div>
             @endforeach
+    </div>
+    @endif
+
+    @if (count($order_items) > 0)
+        <div class="py-4 border-t border-gray-100 bg-gray-50 dark:bg-gray-700 ">
+            <h3 class="text-lg font-semibold text-center">Total: Rp
+                {{ number_format($this->calculateTotal(), 0, ',', '.') }}</h3>
+        </div>
+    @endif
+
+    <div class="mt-2 ">
+        <div class="flex flex-col justify-center items-center">
+            <button type="button" wire:click="$set('showCheckoutModal', true)"
+                class=" w-full h-12 bg-green-500 mt-2 text-white py-2 rounded-lg mb-4 items-center justify-center ">
+                Checkout
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal -->
+@if ($showCheckoutModal)
+    <div wire:ignore.self
+        class="fixed antialiased inset-0 bg-black bg-opacity-75 flex justify-center items-center transition-opacity duration-300 ease-out z-[9999]">
+        <div
+            class="bg-none rounded-lg w-10/12 sm:w-7/12 md:w-5/12 lg:w-3/12 scale-95 transition-transform duration-300 ease-out">
+            <form wire:submit="checkout">
+                {{ $this->form }}
+                <div class="flex justify-between mt-3">
+                    <button type="button" wire:click="$set('showCheckoutModal', false)"
+                        class="w-full rounded-l-full h-12 bg-red-500 hover:bg-red-600 text-white py-2">Batal</button>
+                    <button type="submit"
+                        class="w-full h-12 rounded-r-full bg-green-500 hover:bg-green-600 text-white py-2">Checkout
+                    </button>
                 </div>
-        @endif
+            </form>
+        </div>
+    </div>
+@endif
 
-        @if (count($order_items) > 0)
-            <div class="py-4 border-t border-gray-100 bg-gray-50 dark:bg-gray-700 ">
-                <h3 class="text-lg font-semibold text-center">Total: Rp
-                    {{ number_format($this->calculateTotal(), 0, ',', '.') }}</h3>
+@if ($showConfirmationModal)
+    <div class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+        <!-- Modal Content -->
+        <div class="bg-white rounded-lg shadow-lg w-11/12 sm:w-96">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-purple-500 text-white rounded-t-lg">
+                <h2 class="text-xl text-center font-semibold">PRINT STRUK</h2>
             </div>
-        @endif
-
-        <div class="mt-2 ">
-            <div class="flex flex-col justify-center items-center">
-                <button type="button" wire:click="$set('showCheckoutModal', true)"
-                    class=" w-full h-12 bg-green-500 mt-2 text-white py-2 rounded-lg mb-4 items-center justify-center ">
-                    Checkout
+            <!-- Modal Body -->
+            <div class="px-6 py-4">
+                <p class="text-gray-800">
+                    Apakah Anda ingin mencetak struk untuk pesanan ini?
+                </p>
+            </div>
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 flex justify-center space-x-4">
+                <button wire:click="$set('showConfirmationModal', false)"
+                    class="px-4 py-2 bg-gray-300 text-gray-700 rounded-full hover:bg-gray-400 focus:ring-2 focus:ring-gray-500">
+                    Tidak
                 </button>
+                @if ($print_via_bluetooth == true)
+                    <button wire:click="printBluetooth"
+                        class="px-4 py-2 bg-purple-500 text-white rounded-full hover:bg-blue-600 focus:ring-2 focus:ring-blue-400">
+                        Cetak
+                    </button>
+                @else
+                    <button wire:click="printLocalKabel"
+                        class="px-4 py-2 bg-purple-500 text-white rounded-full hover:bg-blue-600 focus:ring-2 focus:ring-blue-400">
+                        Cetak
+                    </button>
+                @endif
             </div>
         </div>
     </div>
-
-
-
-
-    <!-- Modal -->
-    @if ($showCheckoutModal)
-        <div wire:ignore.self
-            class="fixed antialiased inset-0 bg-black bg-opacity-75 flex justify-center items-center transition-opacity duration-300 ease-out z-[9999]">
-            <div
-                class="bg-none rounded-lg w-10/12 sm:w-7/12 md:w-5/12 lg:w-3/12 scale-95 transition-transform duration-300 ease-out">
-                <form wire:submit="checkout">
-                    {{ $this->form }}
-                    <div class="flex justify-between mt-3">
-                        <button type="button" wire:click="$set('showCheckoutModal', false)"
-                            class="w-full rounded-l-full h-12 bg-red-500 hover:bg-red-600 text-white py-2">Batal</button>
-                        <button type="submit"
-                            class="w-full h-12 rounded-r-full bg-green-500 hover:bg-green-600 text-white py-2">Checkout
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
-
-    @if ($showConfirmationModal)
-        <div class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
-            <!-- Modal Content -->
-            <div class="bg-white rounded-lg shadow-lg w-11/12 sm:w-96">
-                <!-- Modal Header -->
-                <div class="px-6 py-4 bg-purple-500 text-white rounded-t-lg">
-                    <h2 class="text-xl text-center font-semibold">PRINT STRUK</h2>
-                </div>
-                <!-- Modal Body -->
-                <div class="px-6 py-4">
-                    <p class="text-gray-800">
-                        Apakah Anda ingin mencetak struk untuk pesanan ini?
-                    </p>
-                </div>
-                <!-- Modal Footer -->
-                <div class="px-6 py-4 flex justify-center space-x-4">
-                    <button wire:click="$set('showConfirmationModal', false)"
-                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-full hover:bg-gray-400 focus:ring-2 focus:ring-gray-500">
-                        Tidak
-                    </button>
-                    @if ($print_via_bluetooth == true)
-                        <button wire:click="printBluetooth"
-                            class="px-4 py-2 bg-purple-500 text-white rounded-full hover:bg-blue-600 focus:ring-2 focus:ring-blue-400">
-                            Cetak
-                        </button>
-                    @else
-                        <button wire:click="printLocalKabel"
-                            class="px-4 py-2 bg-purple-500 text-white rounded-full hover:bg-blue-600 focus:ring-2 focus:ring-blue-400">
-                            Cetak
-                        </button>
-                    @endif
-                </div>
-            </div>
-        </div>
-    @endif
+@endif
 </div>

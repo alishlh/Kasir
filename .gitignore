@@ -24,3 +24,8 @@ Homestead.yaml
 npm-debug.log
 Thumbs.db
 yarn-error.log
+!storage/
+!storage/app/
+!storage/app/public/
+!storage/app/public/products/
+!storage/app/public/products/product-default.jpg

@@ -14,6 +14,7 @@ class Product extends Model
     protected $fillable = [
         'category_id',
         'name',
+        'nama_perusahaan',
         'stock',
         'cost_price',
         'price',
@@ -23,6 +24,9 @@ class Product extends Model
         'description',
         'is_active',
         'expiry_date',
+        'no_batch',
+        'price_2',
+        'price_racikan'
     ];
 
     public function isNearExpiry(): bool

@@ -27,6 +27,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('/')
             ->login()
+            ->favicon('https://res.cloudinary.com/dv8jmnzaf/image/upload/v1770144423/apotek-removebg-preview_ufgcal.png')
             ->colors([
                 'primary' => Color::Teal,
             ])
@@ -78,6 +79,7 @@ class AdminPanelProvider extends PanelProvider
                         'default' => 1,
                         'sm' => 2,
                     ]),
-            ]);;
+            ]);
+        ;
     }
 }

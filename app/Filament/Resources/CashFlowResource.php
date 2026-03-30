@@ -29,7 +29,7 @@ class CashFlowResource extends Resource implements HasShieldPermissions
             'delete_any',
         ];
     }
-    
+
     protected static ?string $model = CashFlow::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
@@ -41,9 +41,9 @@ class CashFlowResource extends Resource implements HasShieldPermissions
     protected static ?string $navigationGroup = 'Menejemen keuangan';
 
     public static function getNavigationBadge(): ?string
-{
-    return static::getModel()::count();
-}
+    {
+        return static::getModel()::count();
+    }
 
     public static function form(Form $form): Form
     {
@@ -59,6 +59,7 @@ class CashFlowResource extends Resource implements HasShieldPermissions
                     ->grouped()
                     ->live(),
                 Forms\Components\Select::make('source')
+                    ->required()
                     ->options(fn(Get $get) => CashFlowLabelService::getSourceOptionsByType($get('type'))),
                 Forms\Components\TextInput::make('amount')
                     ->prefix('Rp ')
@@ -79,17 +80,17 @@ class CashFlowResource extends Resource implements HasShieldPermissions
                     ->date('d F Y')
                     ->sortable(),
                 Tables\Columns\BadgeColumn::make('type')
-                ->formatStateUsing(fn($state) => CashFlowLabelService::getTypeLabel($state))
-                ->colors([
-                    'success' => CashFlowLabelService::TYPE_INCOME,
-                    'danger' => CashFlowLabelService::TYPE_EXPENSE,
-                ])
-                ->icon(fn (string $state): string => match ($state) {
+                    ->formatStateUsing(fn($state) => CashFlowLabelService::getTypeLabel($state))
+                    ->colors([
+                        'success' => CashFlowLabelService::TYPE_INCOME,
+                        'danger' => CashFlowLabelService::TYPE_EXPENSE,
+                    ])
+                    ->icon(fn(string $state): string => match ($state) {
                         CashFlowLabelService::TYPE_INCOME => 'heroicon-o-arrow-down-circle',
                         CashFlowLabelService::TYPE_EXPENSE => 'heroicon-o-arrow-up-circle',
                     }),
                 Tables\Columns\TextColumn::make('source')
-                    ->formatStateUsing(fn($state, $record) => CashFlowLabelService::getSourceLabel($record->type,$state))
+                    ->formatStateUsing(fn($state, $record) => CashFlowLabelService::getSourceLabel($record->type, $state))
                     ->weight('bold'),
                 Tables\Columns\TextColumn::make('amount')
                     ->prefix('Rp ')
@@ -146,18 +147,19 @@ class CashFlowResource extends Resource implements HasShieldPermissions
                     })
                     ->indicateUsing(
                         fn(array $data): ?string => ($data['type'] ? 'Tipe: ' . CashFlowLabelService::getTypeLabel($data['type']) : null) .
-                            ($data['source'] ? ', Sumber: ' . CashFlowLabelService::getSourceLabel($data['type'], $data['source']) : '')
+                        ($data['source'] ? ', Sumber: ' . CashFlowLabelService::getSourceLabel($data['type'], $data['source']) : '')
                     )
             ], layout: Tables\Enums\FiltersLayout::Modal)
             ->actions([
                 Tables\Actions\EditAction::make()
-                ->visible(fn($record) => 
-                $record->source !== 'sales' &&
-                $record->source !== 'adjustment' &&
-                $record->source !== 'restored_sales' &&
-                $record->source !== 'refund' &&
-                $record->source !== 'purchase_stock' 
-            ),
+                    ->visible(
+                        fn($record) =>
+                        $record->source !== 'sales' &&
+                        $record->source !== 'adjustment' &&
+                        $record->source !== 'restored_sales' &&
+                        $record->source !== 'refund' &&
+                        $record->source !== 'purchase_stock'
+                    ),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

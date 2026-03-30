@@ -35,7 +35,7 @@ class CategoryResource extends Resource implements HasShieldPermissions
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';
 
-    protected static ?string $navigationLabel = 'Kategori';
+    protected static ?string $navigationLabel = 'Rak';
 
     protected static ?string $navigationGroup = 'Manajemen Produk';
 
@@ -43,15 +43,15 @@ class CategoryResource extends Resource implements HasShieldPermissions
 
 
     public static function getNavigationBadge(): ?string
-{
-    return static::getModel()::count();
-}
+    {
+        return static::getModel()::count();
+    }
 
-public static function getEloquentQuery(): Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ])->orderBy('created_at', 'desc');
+            SoftDeletingScope::class,
+        ])->orderBy('created_at', 'desc');
     }
 
 
@@ -61,7 +61,7 @@ public static function getEloquentQuery(): Builder
         return $form
             ->schema([
                 Forms\Components\TextInput::make('name')
-                    ->label('Nama Kategori')
+                    ->label('Nama Rak')
                     ->required()
                     ->maxLength(255),
             ]);
@@ -72,7 +72,7 @@ public static function getEloquentQuery(): Builder
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Nama Kategori')
+                    ->label('Nama Rak')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('products.count')
                     ->label('Jumlah Produk')
@@ -100,9 +100,9 @@ public static function getEloquentQuery(): Builder
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
-                Tables\Actions\ForceDeleteBulkAction::make(),
-                Tables\Actions\RestoreBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
     }
