@@ -31,7 +31,7 @@ class SettingResource extends Resource implements HasShieldPermissions
 
     protected static ?string $navigationLabel = 'Pengaturan';
 
-    protected static ?int $navigationSort = 8;
+    protected static ?int $navigationSort = 9;
 
     protected static ?string $navigationGroup = 'Pengaturan Toko';
 

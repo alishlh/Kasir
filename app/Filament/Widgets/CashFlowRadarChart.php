@@ -2,7 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use Filament\Forms;
+use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\DB;
 
@@ -14,7 +14,10 @@ class CashFlowRadarChart extends ChartWidget
 
     protected function getData(): array
     {
+        $storeId = Filament::getTenant()?->id;
+
         $data = DB::table('cash_flows')
+            ->where('store_id', $storeId)
             ->select('source', 'type', DB::raw('SUM(amount) as total'))
             ->groupBy('source', 'type')
             ->get();

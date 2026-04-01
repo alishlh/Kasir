@@ -16,6 +16,7 @@ class TransactionObserver
     public function created(Transaction $transaction)
     {
         CashFlow::create([
+            'store_id' => $transaction->store_id,
             'date'   => now(),
             'type'   => 'income',
             'source' => 'sales',
@@ -38,6 +39,7 @@ class TransactionObserver
     public function deleted(Transaction $transaction)
     {
         CashFlow::create([
+            'store_id' => $transaction->store_id,
             'date'   => now(),
             'type'   => 'expense',
             'source' => 'refund',
@@ -56,6 +58,7 @@ class TransactionObserver
     public function restored(Transaction $transaction)
     {
         CashFlow::create([
+            'store_id' => $transaction->store_id,
             'date'   => now(),
             'type'   => 'income',
             'source' => 'restored_sales',

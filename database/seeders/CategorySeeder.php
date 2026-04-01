@@ -2,58 +2,36 @@
 
 namespace Database\Seeders;
 
+use App\Models\Store;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 
 class CategorySeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-
         $now = Carbon::now();
+        $stores = Store::all();
 
-        DB::table('categories')->insert([
-            [
-                'id' => 1,
-                'name' => 'Obat Bebas (OTC) & Ringan',
-                'created_at' => $now,
-                'updated_at' => $now
-            ],
-            [
-                'id' => 2,
-                'name' => 'Obat Keras & Resep',
-                'created_at' => $now,
-                'updated_at' => $now
-            ],
-            [
-                'id' => 3,
-                'name' => 'Vitamin & Suplemen',
-                'created_at' => $now,
-                'updated_at' => $now
-            ],
-            [
-                'id' => 4,
-                'name' => 'Alat Kesehatan',
-                'created_at' => $now,
-                'updated_at' => $now
-            ],
-            [
-                'id' => 5,
-                'name' => 'Ibu & Anak',
-                'created_at' => $now,
-                'updated_at' => $now
-            ],
-            [
-                'id' => 6,
-                'name' => 'Perawatan Tubuh (Personal Care)',
-                'created_at' => $now,
-                'updated_at' => $now
-            ],
-        ]);
+        $categories = [
+            'Obat Bebas (OTC) & Ringan',
+            'Obat Keras & Resep',
+            'Vitamin & Suplemen',
+            'Alat Kesehatan',
+            'Ibu & Anak',
+            'Perawatan Tubuh (Personal Care)',
+        ];
 
+        foreach ($stores as $store) {
+            foreach ($categories as $category) {
+                DB::table('categories')->insert([
+                    'store_id' => $store->id,
+                    'name' => $category,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
+        }
     }
 }

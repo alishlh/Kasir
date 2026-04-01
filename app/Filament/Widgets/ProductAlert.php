@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Filament\Tables;
 use App\Models\Product;
 use Filament\Tables\Table;
+use Filament\Facades\Filament;
 use Filament\Tables\Filters\Filter;
 use Filament\Widgets\TableWidget as BaseWidget;
 
@@ -17,14 +18,22 @@ class ProductAlert extends BaseWidget
   
     public function table(Table $table): Table
     {
+        $storeId = Filament::getTenant()?->id;
+
         return $table
             ->query(
-                Product::query()->where('stock', '<', 10)->orderBy('stock', 'asc')
+                Product::query()->where('store_id', $storeId)->where('stock', '<', 10)->orderBy('stock', 'asc')
             )
             ->columns([
                 Tables\Columns\ImageColumn::make('image')
-                ->label('Gambar')
-                ->circular(),
+                    ->label('Gambar')->alignCenter()
+                    ->getStateUsing(function ($record) {
+                        if ($record->image) {
+                            return asset("storage/{$record->image}");
+                        }
+                        return asset('storage/products/product-default.jpg');
+                    })
+                    ->circular(),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Produk')
                     ->searchable(),

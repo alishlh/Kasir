@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Transaction;
+use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
@@ -16,8 +17,11 @@ class PaymentMethodPieChart extends ChartWidget
 
     protected function getData(): array
     {
+        $storeId = Filament::getTenant()?->id;
+
         // Ambil data transaksi yang dikelompokkan berdasarkan metode pembayaran
-        $data = Transaction::selectRaw('payment_method_id, COUNT(*) as total')
+        $data = Transaction::where('store_id', $storeId)
+            ->selectRaw('payment_method_id, COUNT(*) as total')
             ->groupBy('payment_method_id')
             ->with('paymentMethod')
             ->get();

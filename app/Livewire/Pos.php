@@ -14,6 +14,7 @@ use App\Models\PaymentMethod;
 use App\Models\TransactionItem;
 use App\Helpers\TransactionHelper;
 use App\Services\DirectPrintService;
+use Filament\Facades\Filament;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -47,18 +48,27 @@ class Pos extends Component implements HasForms
         'scanResult' => 'handleScanResult',
     ];
 
+    protected function getStoreId()
+    {
+        return Filament::getTenant()?->id;
+    }
+
     public function mount()
     {
-        $settings = Setting::first();
+        $storeId = $this->getStoreId();
+
+        $settings = Setting::where('store_id', $storeId)->first();
         $this->print_via_bluetooth = $settings->print_via_bluetooth ?? $this->print_via_bluetooth = false;
 
-        $this->categories = collect([['id' => null, 'name' => 'Semua']])->merge(Category::all());
+        $this->categories = collect([['id' => null, 'name' => 'Semua']])->merge(
+            Category::where('store_id', $storeId)->get()
+        );
 
         if (session()->has('orderItems')) {
             $this->order_items = session('orderItems');
         }
 
-        $this->payment_methods = PaymentMethod::all();
+        $this->payment_methods = PaymentMethod::where('store_id', $storeId)->get();
 
         // Inisialisasi cash_received dan change dengan format
         $this->cash_received = $this->formatNumber('0');
@@ -67,8 +77,11 @@ class Pos extends Component implements HasForms
 
     public function render()
     {
+        $storeId = $this->getStoreId();
+
         return view('livewire.pos', [
-            'products' => Product::where('stock', '>', 0)->where('is_active', 1)
+            'products' => Product::where('store_id', $storeId)
+                ->where('stock', '>', 0)->where('is_active', 1)
                 ->when($this->selectedCategory !== null, function ($query) {
                     return $query->where('category_id', $this->selectedCategory);
                 })
@@ -289,7 +302,10 @@ class Pos extends Component implements HasForms
 
     public function updatedBarcode($barcode)
     {
-        $product = Product::where('barcode', $barcode)
+        $storeId = $this->getStoreId();
+
+        $product = Product::where('store_id', $storeId)
+            ->where('barcode', $barcode)
             ->where('is_active', true)->first();
 
         if ($product) {
@@ -306,7 +322,10 @@ class Pos extends Component implements HasForms
 
     public function handleScanResult($decodedText)
     {
-        $product = Product::where('barcode', $decodedText)
+        $storeId = $this->getStoreId();
+
+        $product = Product::where('store_id', $storeId)
+            ->where('barcode', $decodedText)
             ->where('is_active', true)->first();
 
         if ($product) {
@@ -474,6 +493,8 @@ class Pos extends Component implements HasForms
             'payment_method_id' => 'required'
         ]);
 
+        $storeId = $this->getStoreId();
+
         // Parse nilai yang diformat ke numeric (termasuk minus)
         $cashReceivedNumeric = $this->parseNumber($this->cash_received);
         $changeNumeric = $this->parseNumber($this->change);
@@ -505,6 +526,7 @@ class Pos extends Component implements HasForms
         }
 
         $order = Transaction::create([
+            'store_id' => $storeId,
             'user_id' => auth()->id(),
             'payment_method_id' => $payment_method_id_temp,
             'transaction_number' => TransactionHelper::generateUniqueTrxId(),
@@ -564,12 +586,14 @@ class Pos extends Component implements HasForms
 
     public function printBluetooth()
     {
+        $storeId = $this->getStoreId();
+
         $order = Transaction::with(['paymentMethod', 'transactionItems.product'])->findOrFail($this->orderToPrint);
         $items = $order->transactionItems;
 
         $this->dispatch(
             'doPrintReceipt',
-            store: Setting::first(),
+            store: Setting::where('store_id', $storeId)->first(),
             order: $order,
             items: $items,
             date: $order->created_at->format('d-m-Y H:i:s')

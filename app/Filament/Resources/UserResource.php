@@ -35,6 +35,8 @@ class UserResource extends Resource implements HasShieldPermissions
 
     public static ?int $navigationSort = 7;
 
+    protected static bool $isScopedToTenant = false;
+
     public static function form(Form $form): Form
     {
         return $form

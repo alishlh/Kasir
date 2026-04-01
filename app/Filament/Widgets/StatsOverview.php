@@ -7,6 +7,7 @@ use App\Models\CashFlow;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Observers\TransactionObserver;
+use Filament\Facades\Filament;
 use Filament\Support\Enums\IconPosition;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -19,6 +20,7 @@ class StatsOverview extends BaseWidget
     protected function getStats(): array
     {
         $filter = $this->filters['range'] ?? 'today';
+        $storeId = Filament::getTenant()?->id;
 
         if ($filter === 'custom') {
             $startDate = !is_null($this->filters['startDate'] ?? null)
@@ -40,16 +42,17 @@ class StatsOverview extends BaseWidget
             };
         }
 
-        $dataPriceOrder = Transaction::whereBetween('created_at', [$startDate, $endDate])->get();
-        $dataPriceExpense = CashFlow::where('type', 'expense')->whereBetween('created_at', [$startDate, $endDate])->get();
-        $dataPriceInFLow = CashFlow::where('type', 'income')->whereBetween('created_at', [$startDate, $endDate])->get();
+        $dataPriceOrder = Transaction::where('store_id', $storeId)->whereBetween('created_at', [$startDate, $endDate])->get();
+        $dataPriceExpense = CashFlow::where('store_id', $storeId)->where('type', 'expense')->whereBetween('created_at', [$startDate, $endDate])->get();
+        $dataPriceInFLow = CashFlow::where('store_id', $storeId)->where('type', 'income')->whereBetween('created_at', [$startDate, $endDate])->get();
 
         // Hitung total profit dari TransactionItem
-        $dataTotalProfit = TransactionItem::whereBetween('created_at', [$startDate, $endDate])->sum('total_profit');
+        $dataTotalProfit = TransactionItem::whereHas('transaction', fn ($q) => $q->where('store_id', $storeId))
+            ->whereBetween('created_at', [$startDate, $endDate])->sum('total_profit');
 
         // Hitung total jasa dokter dan jasa tindakan dari Transaction
-        $totalJasaDokter = Transaction::whereBetween('created_at', [$startDate, $endDate])->sum('jasa_dokter');
-        $totalJasaTindakan = Transaction::whereBetween('created_at', [$startDate, $endDate])->sum('jasa_tindakan');
+        $totalJasaDokter = Transaction::where('store_id', $storeId)->whereBetween('created_at', [$startDate, $endDate])->sum('jasa_dokter');
+        $totalJasaTindakan = Transaction::where('store_id', $storeId)->whereBetween('created_at', [$startDate, $endDate])->sum('jasa_tindakan');
 
         // Total profit keseluruhan (profit produk + jasa dokter + jasa tindakan)
         $totalProfitAll = $dataTotalProfit + $totalJasaDokter + $totalJasaTindakan;

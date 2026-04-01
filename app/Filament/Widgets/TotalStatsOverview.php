@@ -7,6 +7,7 @@ use App\Models\CashFlow;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Observers\TransactionObserver;
+use Filament\Facades\Filament;
 use Filament\Support\Enums\IconPosition;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -29,8 +30,10 @@ class TotalStatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        $totalInFlow = CashFlow::where('type','income')->sum('amount');
-        $totalOutFlow = CashFlow::where('type','expense')->sum('amount');
+        $storeId = Filament::getTenant()?->id;
+
+        $totalInFlow = CashFlow::where('store_id', $storeId)->where('type','income')->sum('amount');
+        $totalOutFlow = CashFlow::where('store_id', $storeId)->where('type','expense')->sum('amount');
         
         return [
             

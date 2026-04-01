@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Facades\Filament;
 use Filament\Widgets\TableWidget as BaseWidget;
 use App\Models\Product;
 use App\Models\OrderProduct;
@@ -14,7 +15,10 @@ class ProductFavorite extends BaseWidget
     protected static ?string $heading = 'Produk Terlaris';
     public function table(Table $table): Table
     {
+        $storeId = Filament::getTenant()?->id;
+
         $productQuery = Product::query()
+            ->where('store_id', $storeId)
             ->select('products.*') // Pastikan semua kolom dari products ikut diambil
             ->withCount('transactionItems')
             ->orderBy('transaction_items_count', 'desc')
