@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Models\Store;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Navigation\MenuItem;
@@ -17,6 +18,8 @@ use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use App\Filament\Pages\Tenancy\RegisterStore;
+use App\Filament\Pages\Tenancy\EditStoreProfile;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -31,6 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Teal,
             ])
+            ->tenant(Store::class, ownershipRelationship: 'stores', slugAttribute: 'slug')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
@@ -55,8 +59,8 @@ class AdminPanelProvider extends PanelProvider
 
                 // ...
             ])
-            ->topbar(!request()->is('pos*'))
-            ->navigation(!request()->is('pos*'))
+            ->topbar(!request()->is('*/pos*'))
+            ->navigation(!request()->is('*/pos*'))
             ->sidebarCollapsibleOnDesktop()
             ->font('poppins')
             ->plugins([

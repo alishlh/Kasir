@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Store;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -13,8 +14,6 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Jalankan ShieldSeeder
-        // Ini akan otomatis generate permission untuk semua Resource (Product, Transaction, dll)
-        // dan membuat role Super Admin sesuai config.
         $this->call(ShieldSeeder::class);
 
         // --- SETUP ROLE CUSTOM ---
@@ -22,13 +21,11 @@ class DatabaseSeeder extends Seeder
         // A. Setup Role Karyawan (Kasir)
         $roleEmployee = Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
 
-        // Beri akses ke Transaksi, Produk, Customer, dll (Sesuaikan kebutuhan)
-        // Kita ambil permission yang mengandung kata kunci tertentu
         $employeePermissions = Permission::query()
             ->where('name', 'like', '%transaction%')
             ->orWhere('name', 'like', '%product%')
             ->orWhere('name', 'like', '%category%')
-            ->orWhere('name', 'page_PosPage')
+            ->orWhere('name', '_PosPage')
             ->orWhere('name', '_Dashboard')
             ->get();
 
@@ -38,7 +35,6 @@ class DatabaseSeeder extends Seeder
         // B. Setup Role Petugas Pajak (Hanya Cash Flow)
         $roleTaxOfficer = Role::firstOrCreate(['name' => 'tax_officer', 'guard_name' => 'web']);
 
-        // Ambil permission spesifik sesuai format Shield (perhatikan double colon ::)
         $taxPermissions = Permission::whereIn('name', [
             '_Dashboard',
             'view_any_cash::flow',
@@ -50,57 +46,78 @@ class DatabaseSeeder extends Seeder
         $roleTaxOfficer->syncPermissions($taxPermissions);
 
 
+        // --- SETUP STORES ---
+        $storePusat = Store::create([
+            'name' => 'Apotek Pusat',
+            'slug' => 'apotek-pusat',
+            'address' => 'Jl. Pahlawan No. 123, Kota Sejahtera, 14045',
+            'phone' => '081234567890',
+            'is_active' => true,
+        ]);
+
+        $storeCabang = Store::create([
+            'name' => 'Apotek Cabang 1',
+            'slug' => 'apotek-cabang-1',
+            'address' => 'Jl. Merdeka No. 45, Kota Makmur, 15067',
+            'phone' => '089876543210',
+            'is_active' => true,
+        ]);
+
+
         // --- SETUP USER & ASSIGN ROLE ---
 
-        // 1. Owner (Super Admin)
+        // 1. Owner (Super Admin) - akses ke semua toko
         $userOwner = User::updateOrCreate(
-            ['email' => 'admin@gmail.com'],
+            ['email' => 'owner@apotek.com'],
             [
                 'name' => 'Owner Toko',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
         );
-        // Assign role Super Admin (nama role default Shield biasanya 'super_admin')
         $userOwner->assignRole('super_admin');
+        $userOwner->stores()->sync([$storePusat->id, $storeCabang->id]);
 
-
-        // 2. Karyawan 1
+        // 2. Karyawan 1 - Apotek Pusat
         $userKaryawan1 = User::updateOrCreate(
-            ['email' => 'kasirpagi@gmail.com'],
+            ['email' => 'kasir.pusat1@apotek.com'],
             [
-                'name' => 'Kasir Pagi',
+                'name' => 'Kasir Pusat 1',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
         );
         $userKaryawan1->assignRole($roleEmployee);
+        $userKaryawan1->stores()->sync([$storePusat->id]);
 
-
-        // 3. Karyawan 2
+        // 3. Karyawan 2 - Apotek Pusat
         $userKaryawan2 = User::updateOrCreate(
-            ['email' => 'kasirsore@gmail.com'],
+            ['email' => 'kasir.pusat2@apotek.com'],
             [
-                'name' => 'Kasir Sore',
+                'name' => 'Kasir Pusat 2',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
+                'status' => "non-active",
             ]
         );
         $userKaryawan2->assignRole($roleEmployee);
+        $userKaryawan2->stores()->sync([$storePusat->id]);
 
-        $userKaryawan2 = User::updateOrCreate(
-            ['email' => 'ishlahhh@gmail.com'],
+        // 4. Karyawan 3 - Apotek Cabang 1
+        $userSyifa = User::updateOrCreate(
+            ['email' => 'kasir.cabang1@apotek.com'],
             [
-                'name' => 'Syifa',
+                'name' => 'Kasir Cabang 1',
                 'password' => Hash::make('password'),
-                'status'=> "non-active",
+                'status' => "active",
             ]
         );
-        $userKaryawan2->assignRole($roleEmployee);
+        $userSyifa->assignRole($roleEmployee);
+        $userSyifa->stores()->sync([$storeCabang->id]);
 
-        // 4. Petugas Pajak
+        // 5. Petugas Pajak - akses ke semua toko
         $userPajak = User::updateOrCreate(
-            ['email' => 'pajak@gmail.com'],
+            ['email' => 'pajak@apotek.com'],
             [
                 'name' => 'Petugas Pajak',
                 'password' => Hash::make('password'),
@@ -108,14 +125,16 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $userPajak->assignRole($roleTaxOfficer);
+        $userPajak->stores()->sync([$storePusat->id, $storeCabang->id]);
 
 
-        // --- SEED DATA LAINNYA ---
+        // --- SEED DATA LAINNYA (sekarang store-aware) ---
         $this->call([
             SettingSeeder::class,
             CategorySeeder::class,
             ProductSeeder::class,
-            PaymentMethodSeeder::class
+            PaymentMethodSeeder::class,
+            TransactionSeeder::class
         ]);
     }
 }

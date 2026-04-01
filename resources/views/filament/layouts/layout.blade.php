@@ -1,6 +1,6 @@
 <div class="flex flex-row items-center justify-between w-full">
     <div class="flex flex-row items-center justify-center gap-2">
-        <x-filament::button onclick="window.location='/transactions'"
+        <x-filament::button onclick="window.history.back()"
             class="px-2 w-12 h-12 bg-primary text-white rounded-lg"><i class="fa fa-chevron-circle-left"
                 style="font-size:36px"></i>
         </x-filament::button>
