@@ -73,13 +73,6 @@ Update terbaru memperkenalkan sistem **Multi-Tenant** yang memungkinkan isolasi 
 3. **Dashboard Scoped**: Dashboard dan semua fitur (POS, Laporan, Stok) akan otomatis memfilter data hanya untuk toko yang dipilih.
 4. **Tenant Switcher**: User (terutama Owner/Admin) dapat berpindah antar toko melalui menu dropdown di sidebar tanpa perlu logout.
 
-### Dokumentasi Visual
-![Pemilihan Toko](file:///home/adminfid/.gemini/antigravity/brain/387000df-9d58-41c8-8744-11f433cd4bbe/.system_generated/click_feedback/click_feedback_1774965151978.png)
-*Antarmuka pemilihan toko dan switcher di sidebar.*
-
-![Halaman Kasir](file:///home/adminfid/.gemini/antigravity/brain/387000df-9d58-41c8-8744-11f433cd4bbe/.system_generated/click_feedback/click_feedback_1774965626019.png)
-*Halaman Kasir (POS) yang sudah ter-scope per toko.*
-
 ---
 
 ## 👥 User Demo & Role
