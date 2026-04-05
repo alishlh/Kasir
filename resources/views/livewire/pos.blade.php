@@ -87,8 +87,8 @@
                 <div class="mb-4 ">
                     <div class="flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow">
                         <div class="flex items-center">
-                            <img src="{{ asset('storage/' . ($item->image ?? 'products/product-default.jpg')) }}" loading="lazy"
-                                alt="Product Image" class="w-10 h-10 object-cover rounded-lg mr-2">
+                            <img src="{{ asset('storage/' . ($item->image ?? 'products/product-default.jpg')) }}"
+                                loading="lazy" alt="Product Image" class="w-10 h-10 object-cover rounded-lg mr-2">
                             <div class="px-2">
                                 <h3 class="text-xs line-clamp-2 font-semibold">{{ $item['name'] }}</h3>
                                 <p class="text-gray-600 dark:text-gray-400 text-xs">Rp
@@ -184,3 +184,71 @@
     </div>
 @endif
 </div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script
+    src="{{ config('midtrans.is_production') ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js' }}"
+    data-client-key="{{ config('midtrans.client_key') }}"></script>
+
+<script>
+    document.addEventListener('livewire:initialized', () => {
+        Livewire.on('open-midtrans', (event) => {
+            let token = event.token ?? event[0].token;
+
+            window.snap.pay(token, {
+                onSuccess: function(result) {
+                    Swal.fire({
+                        title: 'Berhasil!',
+                        text: 'Pembayaran telah diterima.',
+                        icon: 'success',
+                        confirmButtonColor: '#22c55e',
+                    }).then((result) => {
+                        Livewire.dispatch('paymentSuccess');
+                    });
+                },
+                onPending: function(result) {
+                    Swal.fire({
+                        title: 'Menunggu Pembayaran',
+                        text: 'Nomor VA/QRIS telah dibuat. Apakah pelanggan jadi membayar transaksi ini?',
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonText: 'Tunggu Pembayaran',
+                        cancelButtonText: 'Batalkan Transaksi',
+                        confirmButtonColor: '#3b82f6',
+                        cancelButtonColor: '#ef4444',
+                    }).then((alertResult) => {
+                        if (alertResult.isConfirmed) {
+                            // Kasir menunggu pembayaran diselesaikan.
+                            // Refresh halaman agar kasir bisa melayani antrian lain.
+                            window.location.reload();
+                        } else {
+                            // Kasir memilih batal (misal pembeli berubah pikiran mau bayar Cash saja)
+                            // Jalankan fungsi delete transaksi di backend
+                            Livewire.dispatch('paymentFailed');
+                        }
+                    });
+                },
+                onError: function(result) {
+                    Swal.fire({
+                        title: 'Gagal!',
+                        text: 'Pembayaran gagal diproses.',
+                        icon: 'error',
+                        confirmButtonColor: '#ef4444',
+                    }).then(() => {
+                        Livewire.dispatch('paymentFailed');
+                    });
+                },
+                onClose: function() {
+                    Swal.fire({
+                        title: 'Dibatalkan',
+                        text: 'Anda menutup popup sebelum menyelesaikan pembayaran.',
+                        icon: 'warning',
+                        confirmButtonColor: '#f59e0b',
+                    }).then(() => {
+                        Livewire.dispatch('paymentFailed');
+                    });
+                }
+            });
+        });
+    });
+</script>

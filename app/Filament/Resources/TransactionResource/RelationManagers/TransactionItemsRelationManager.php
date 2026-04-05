@@ -19,8 +19,8 @@ class TransactionItemsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('title')
             ->columns([
-                Tables\Columns\ImageColumn::make('productWithTrashed.image')
-                    ->label('Gambar'),
+                // Tables\Columns\ImageColumn::make('productWithTrashed.image')
+                //     ->label('Gambar'),
                 Tables\Columns\TextColumn::make('productWithTrashed.name')
                     ->label('Nama Produk'),
                 Tables\Columns\TextColumn::make('quantity')

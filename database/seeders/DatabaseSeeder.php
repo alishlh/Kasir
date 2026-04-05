@@ -134,7 +134,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             ProductSeeder::class,
             PaymentMethodSeeder::class,
-            TransactionSeeder::class
+            // TransactionSeeder::class
         ]);
     }
 }

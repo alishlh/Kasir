@@ -92,7 +92,7 @@ class TransactionResource extends Resource implements HasShieldPermissions
 
                 Forms\Components\Group::make()
                     ->schema([
-                        Forms\Components\Section::make()
+                        Forms\Components\Section::make('Ringkasan')
                             ->schema([
                                 Forms\Components\TextInput::make('subtotal')
                                     ->label('Subtotal')
@@ -166,6 +166,15 @@ class TransactionResource extends Resource implements HasShieldPermissions
                                     ->numeric()
                                     ->label('Kembalian')
                                     ->readOnly(),
+                                Forms\Components\Select::make('payment_status')
+                                    ->label('Status Pembayaran (Manual Override)')
+                                    ->options([
+                                        'paid' => 'Lunas (Paid)',
+                                        'unpaid' => 'Belum Lunas (Unpaid)',
+                                        'failed' => 'Gagal / Batal (Failed)',
+                                    ])
+                                    ->default('unpaid')
+                                    ->required(),
                             ])
                     ]),
 
@@ -226,6 +235,18 @@ class TransactionResource extends Resource implements HasShieldPermissions
                             ->money('IDR')
                             ->label('Total Penjualan')
                     ),
+                Tables\Columns\TextColumn::make('payment_status')
+                    ->label('Status Bayar')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'paid' => 'success',
+                        'unpaid' => 'warning',
+                        'failed' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
+                    ->searchable()
+                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\Filter::make('date_range')
@@ -383,16 +404,12 @@ class TransactionResource extends Resource implements HasShieldPermissions
                     ]),
             ])
             ->mutateRelationshipDataBeforeSaveUsing(function (array $data) {
-                $invalidProducts = collect($data['transactionItems'] ?? [])
-                    ->filter(function ($item) {
-                        $product = Product::withTrashed()->find($item['product_id']);
-                        return !$product || $product->trashed();
-                    });
+                $product = Product::withTrashed()->find($data['product_id']);
 
-                if ($invalidProducts->isEmpty()) {
+                if (!$product || $product->trashed()) {
                     Notification::make()
                         ->title('Tidak dapat menyimpan')
-                        ->body('Ada produk yang telah dihapus dari sistem.')
+                        ->body('Ada produk yang telah dihapus dari sistem (ID: ' . $data['product_id'] . ').')
                         ->danger()
                         ->send();
 
@@ -444,6 +461,17 @@ class TransactionResource extends Resource implements HasShieldPermissions
                     ->label('Tanggal Transaksi:')
                     ->badge()
                     ->color('primary')
+                    ->weight(FontWeight::Bold),
+                TextEntry::make('payment_status')
+                    ->label('Status Bayar')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'paid' => 'success',
+                        'unpaid' => 'warning',
+                        'failed' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
                     ->weight(FontWeight::Bold),
             ])->columns(4);
     }
