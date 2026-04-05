@@ -27,6 +27,9 @@ class Transaction extends Model
         'user_id',
         'jasa_dokter',
         'jasa_tindakan',
+        'payment_status',
+        'snap_token',
+        // 'payment_type'
     ];
     protected $casts = [
         'is_bpjs' => 'boolean',

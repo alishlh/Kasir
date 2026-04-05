@@ -18,6 +18,7 @@ use Filament\Facades\Filament;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Forms\Concerns\InteractsWithForms;
+use App\Services\MidtransService;
 
 class Pos extends Component implements HasForms
 {
@@ -46,6 +47,8 @@ class Pos extends Component implements HasForms
     public string $selectedPriceType = 'price';
     protected $listeners = [
         'scanResult' => 'handleScanResult',
+        'paymentSuccess' => 'handlePaymentSuccess',
+        'paymentFailed' => 'handlePaymentFailed'
     ];
 
     protected function getStoreId()
@@ -486,7 +489,7 @@ class Pos extends Component implements HasForms
         }
     }
 
-    public function checkout()
+    public function checkout(MidtransService $midtransService)
     {
         $this->validate([
             'name' => 'string|max:255',
@@ -494,6 +497,8 @@ class Pos extends Component implements HasForms
         ]);
 
         $storeId = $this->getStoreId();
+        $paymentMethod = PaymentMethod::find($this->payment_method_id);
+        $isCash = $paymentMethod?->is_cash ?? false;
 
         // Parse nilai yang diformat ke numeric (termasuk minus)
         $cashReceivedNumeric = $this->parseNumber($this->cash_received);
@@ -528,7 +533,7 @@ class Pos extends Component implements HasForms
         $order = Transaction::create([
             'store_id' => $storeId,
             'user_id' => auth()->id(),
-            'payment_method_id' => $payment_method_id_temp,
+            'payment_method_id' => $paymentMethod->id,
             'transaction_number' => TransactionHelper::generateUniqueTrxId(),
             'name' => $this->name,
             'total' => $totalWithJasa,
@@ -537,6 +542,7 @@ class Pos extends Component implements HasForms
             'is_bjps' => $this->is_bjps,
             'jasa_dokter' => $this->jasa_dokter,
             'jasa_tindakan' => $this->jasa_tindakan,
+            'payment_status' => $isCash || $this->is_bjps ? 'paid' : 'unpaid',
         ]);
 
         // Hanya buat transaction items jika ada produk
@@ -553,6 +559,28 @@ class Pos extends Component implements HasForms
             }
         }
 
+        if (!$isCash && !$this->is_bjps) {
+            try {
+                $order->load('transactionItems.product');
+                $snapToken = $midtransService->getSnapToken($order);
+                $order->update(['snap_token' => $snapToken]);
+
+                // 1. Simpan ID transaksi untuk modal cetak nanti
+                $this->orderToPrint = $order->id;
+
+                // 2. Tutup modal checkout saja, JANGAN reset keranjang dulu
+                $this->showCheckoutModal = false;
+
+                // 3. Panggil popup Midtrans
+                $this->dispatch('open-midtrans', token: $snapToken);
+
+                return;
+            } catch (\Exception $e) {
+                Notification::make()->title('Gagal memuat payment gateway')->danger()->send();
+                return;
+            }
+        }
+
         $this->orderToPrint = $order->id;
         $this->showConfirmationModal = true;
         $this->showCheckoutModal = false;
@@ -562,7 +590,48 @@ class Pos extends Component implements HasForms
             ->success()
             ->send();
 
-        // Reset form dengan format yang benar
+        $this->resetOrderForm();
+    }
+
+    public function handlePaymentSuccess()
+    {
+        Notification::make()
+            ->title('Transaksi berhasil dibayar melalui Payment Gateway')
+            ->success()
+            ->send();
+
+        $this->showConfirmationModal = true;
+
+        $this->resetOrderForm();
+    }
+    public function handlePaymentFailed()
+    {
+        if ($this->orderToPrint) {
+            $transaction = Transaction::find($this->orderToPrint);
+
+            // Pastikan hanya menghapus jika statusnya belum dibayar
+            if ($transaction && in_array($transaction->payment_status, ['unpaid', 'pending', 'failed'])) {
+
+                // 1. Hapus isi detail item transaksinya dulu (wajib agar tidak error relasi DB)
+                TransactionItem::where('transaction_id', $transaction->id)->forceDelete();
+
+                // 2. Baru hapus transaksi utamanya
+                $transaction->forceDelete();
+            }
+
+            $this->orderToPrint = null;
+
+            // Beri tahu kasir bahwa transaksi sukses dibatalkan dan keranjang utuh
+            Notification::make()
+                ->title('Transaksi Dibatalkan')
+                ->body('Silakan ubah metode pembayaran atau item pesanan.')
+                ->warning()
+                ->send();
+        }
+    }
+
+    private function resetOrderForm()
+    {
         $this->name = 'Umum';
         $this->payment_method_id = null;
         $this->total_price = 0;

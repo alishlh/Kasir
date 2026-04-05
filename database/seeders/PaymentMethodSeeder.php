@@ -21,7 +21,7 @@ class PaymentMethodSeeder extends Seeder
             ]);
             PaymentMethod::create([
                 'store_id' => $store->id,
-                'name' => 'Transfer Bank',
+                'name' => 'Transfer',
                 'image' => null,
                 'is_cash' => false,
             ]);
